@@ -4,44 +4,68 @@
 //
 // Modular Framework for OpenGLES2 rendering on multiple platforms.
 //
+
+#include <fstream>
+#include <sstream>
 namespace octet {
-  /// Scene containing a box with octet.
+
   class MichaelCraddockswork : public app {
-    // scene for drawing box
+  
     ref<visual_scene> app_scene;
+
+	string content;
   public:
-    /// this is called when we construct the class before everything is initialised.
+   
     MichaelCraddockswork(int argc, char **argv) : app(argc, argv) {
     }
+	void loadlevel(){
+		
+		std::fstream levelfile;
+		std::stringstream filename;
+		filename << "testlevel" << ".txt";
+		levelfile.open(filename.str().c_str(), std::ios::in);
+		if (!levelfile.is_open()){
+			printf("The file isn't here, try again.\n");
+		}
+		else{
 
-    /// this is called once OpenGL is initialized
+			printf("file is open\n");
+			levelfile.seekg(0, levelfile.end);
+			int length = levelfile.tellg();
+			levelfile.seekg(0, levelfile.beg);
+
+			std::stringstream file;
+			file.str(std::string());
+			file << levelfile.rdbuf();
+			levelfile.close();
+
+			content = file.str().c_str();
+			printf("%s \n", content.c_str());
+			Buildlevel();
+		}
+
+		}
+	void Buildlevel(){
+
+
+	}
+  
     void app_init() {
       app_scene =  new visual_scene();
       app_scene->create_default_camera_and_lights();
-
-      material *red = new material(vec4(1, 0, 0, 1));
-      mesh_box *box = new mesh_box(vec3(4));
-      scene_node *node = new scene_node();
-      app_scene->add_child(node);
-      app_scene->add_mesh_instance(new mesh_instance(node, box, red));
+	  loadlevel();
     }
 
-    /// this is called to draw the world
+  
     void draw_world(int x, int y, int w, int h) {
       int vx = 0, vy = 0;
       get_viewport_size(vx, vy);
       app_scene->begin_render(vx, vy);
 
-      // update matrices. assume 30 fps.
       app_scene->update(1.0f/30);
 
       // draw the scene
       app_scene->render((float)vx / vy);
-
-      // tumble the box  (there is only one mesh instance)
-      scene_node *node = app_scene->get_mesh_instance(0)->get_node();
-      node->rotate(1, vec3(1, 0, 0));
-      node->rotate(1, vec3(0, 1, 0));
     }
   };
 }
