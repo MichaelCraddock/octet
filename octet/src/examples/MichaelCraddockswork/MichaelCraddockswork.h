@@ -12,6 +12,11 @@ namespace octet {
   class MichaelCraddockswork : public app {
   
     ref<visual_scene> app_scene;
+	btDefaultCollisionConfiguration config;       /// setup for the world
+	btCollisionDispatcher *dispatcher;            /// handler for collisions between objects
+	btDbvtBroadphase *broadphase;                 /// handler for broadphase (rough) collision
+	btSequentialImpulseConstraintSolver *solver;  /// handler to resolve collisions
+	btDiscreteDynamicsWorld *world;
 
 	string content;
   public:
