@@ -2,6 +2,6 @@
 |                               |
 |                               |
 |  XXXXX                        |
-|  XXXXX         x        II    |
-|  XXXXX        XXX       II    |
+|  XXXXX         X              |
+|  XXXXX        XXX             |
 |-------------------------------|

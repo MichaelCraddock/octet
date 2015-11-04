@@ -21,12 +21,36 @@ namespace octet {
 	dynarray<btRigidBody*> rigid_bodies;
 	dynarray<scene_node*> nodes;
 	mesh_box *box;
+	material *wall, *floor ,*target;
+
+	mat4t worldcoord;
+	//scene_node *cam;
 
 	string content;
   public:
    
     MichaelCraddockswork(int argc, char **argv) : app(argc, argv) {
+
+		dispatcher = new btCollisionDispatcher(&config);
+		broadphase = new btDbvtBroadphase();
+		solver = new btSequentialImpulseConstraintSolver();
+		world = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, &config);
     }
+	~MichaelCraddockswork(){
+		delete world;
+		delete dispatcher;
+		delete solver;
+		delete broadphase;
+	}
+
+	/*void newscene(){
+		app_scene->reset();
+		app_scene->create_default_camera_and_lights();
+		app_scene->get_camera_instance(0)->set_far_plane(1000);
+		cam = app_scene->get_camera_instance(0)->get_node();
+		cam->translate(vec3(24, -24, 50));
+		Camera();
+	} */
 	// in this section we add a mesh and a rigid body
 	void add_mesh(mat4t_in coord, mesh *shape, material *mat, bool is_dynamic){
 		
@@ -36,7 +60,7 @@ namespace octet {
 		app_scene->add_mesh_instance(new mesh_instance(node, shape, mat));
 
 		btMatrix3x3 matrix(get_btMatrix3x3(coord));
-		btVector3 pos(get_btVector3(coord[3].xyz));
+		btVector3 pos(get_btVector3(coord[3].xyz()));
 
 		btCollisionShape *collisionshape = shape->get_bullet_shape();
 
@@ -89,6 +113,49 @@ namespace octet {
 		}
 	void Buildlevel(){
 
+		vec3 pos = vec3(0, 0, 0);
+		int x = 0;
+		for (int i = 0; i < content.size(); i++){
+
+			scene_node *node = new scene_node;
+			char c = content[i];
+			switch (c)
+			{
+			case '\n': pos -= (vec3(x, 0, 0));
+				x = 0;
+				pos += vec3(1, 0, 0);
+				break;
+			case' ':
+				x += 1;
+				pos += vec3(1, 0, 0);
+				break;
+			case'-': worldcoord.translate(pos);
+				add_mesh(worldcoord, box, floor, false);
+				rigid_bodies.back()->setFriction(0);
+				rigid_bodies.back()->setRestitution(0);
+				worldcoord.loadIdentity();
+				x += 1;
+				pos += vec3(1, 0, 0);
+				break;
+			case'X': worldcoord.translate(pos);
+				add_mesh(worldcoord, box, target, false);
+				rigid_bodies.back()->setFriction(0);
+				rigid_bodies.back()->setRestitution(0);
+				worldcoord.loadIdentity();
+				x += 1;
+				pos += vec3(1, 0, 0);
+				break;
+			case'|': worldcoord.translate(pos);
+				add_mesh(worldcoord, box, wall, false);
+				rigid_bodies.back()->setFriction(0);
+				rigid_bodies.back()->setRestitution(0);
+				worldcoord.loadIdentity();
+				x += 1;
+				pos += vec3(1, 0, 0);
+				break;
+			default: break;
+			}
+		}
 
 	}
 
@@ -115,14 +182,17 @@ namespace octet {
 	}
   
     void app_init() {
-      app_scene =  new visual_scene();
-      app_scene->create_default_camera_and_lights();
-	  material *red = new material(vec4(1, 0, 0, 1));
-	  mesh_box *box = new mesh_box(vec3(4));
-	  scene_node *node = new scene_node();
-	  app_scene->add_child(node);
-	  app_scene->add_mesh_instance(new mesh_instance(node, box, red));
+
+	  app_scene = new visual_scene();
+	  app_scene->create_default_camera_and_lights();
+	  box = new mesh_box(0.5f);
+	  wall = new material(vec4(1, 0, 0, 1));
+	  floor = new material(vec4(0, 1, 0, 1));
+	  target = new material(vec4(1, 1, 0, 1));
 	  loadlevel();
+	  Camera();
+	  
+	  
 	
     }
 
@@ -136,10 +206,7 @@ namespace octet {
 
       // draw the scene
       app_scene->render((float)vx / vy);
-	  scene_node *node = app_scene->get_mesh_instance(0)->get_node();
-	  node->rotate(1, vec3(1, 0, 0));
-	  node->rotate(1, vec3(0, 1, 0));
-	  Camera();
+	  
     }
   };
 }
