@@ -18,11 +18,48 @@ namespace octet {
 	btSequentialImpulseConstraintSolver *solver;  /// handler to resolve collisions
 	btDiscreteDynamicsWorld *world;
 
+	dynarray<btRigidBody*> rigid_bodies;
+	dynarray<scene_node*> nodes;
+	mesh_box *box;
+
 	string content;
   public:
    
     MichaelCraddockswork(int argc, char **argv) : app(argc, argv) {
     }
+	// in this section we add a mesh and a rigid body
+	void add_mesh(mat4t_in coord, mesh *shape, material *mat, bool is_dynamic){
+		
+		scene_node *node = new scene_node();
+		node->access_nodeToParent() = coord;
+		app_scene->add_child(node);
+		app_scene->add_mesh_instance(new mesh_instance(node, shape, mat));
+
+		btMatrix3x3 matrix(get_btMatrix3x3(coord));
+		btVector3 pos(get_btVector3(coord[3].xyz));
+
+		btCollisionShape *collisionshape = shape->get_bullet_shape();
+
+		if (collisionshape){
+
+			btTransform transform(matrix, pos);
+			btDefaultMotionState *motionstate = new btDefaultMotionState(transform);
+			btScalar mass = is_dynamic ? 0.5f : 0.5f;
+			btVector3 inertiaTensor;
+
+			collisionshape->calculateLocalInertia(mass, inertiaTensor);
+
+			btRigidBody *rigid_body = new btRigidBody(mass, motionstate, collisionshape, inertiaTensor);
+			world->addRigidBody(rigid_body);
+			rigid_bodies.push_back(rigid_body);
+			rigid_body->setUserPointer(node);
+
+		}
+		
+		
+
+	}
+
 	void loadlevel(){
 		
 		std::fstream levelfile;
