@@ -24,7 +24,7 @@ namespace octet {
 	material *wall, *floor ,*target;
 
 	mat4t worldcoord;
-	//scene_node *cam;
+	scene_node *cam;
 
 	string content;
   public:
@@ -43,14 +43,14 @@ namespace octet {
 		delete broadphase;
 	}
 
-	/*void newscene(){
+	void newscene()
+	{
 		app_scene->reset();
 		app_scene->create_default_camera_and_lights();
 		app_scene->get_camera_instance(0)->set_far_plane(1000);
 		cam = app_scene->get_camera_instance(0)->get_node();
 		cam->translate(vec3(24, -24, 50));
-		Camera();
-	} */
+	}
 	// in this section we add a mesh and a rigid body
 	void add_mesh(mat4t_in coord, mesh *shape, material *mat, bool is_dynamic){
 		
@@ -123,7 +123,7 @@ namespace octet {
 			{
 			case '\n': pos -= (vec3(x, 0, 0));
 				x = 0;
-				pos += vec3(1, 0, 0);
+				pos += vec3(0, -1, 0);
 				break;
 			case' ':
 				x += 1;
@@ -145,6 +145,7 @@ namespace octet {
 				x += 1;
 				pos += vec3(1, 0, 0);
 				break;
+			//case'-':
 			case'|': worldcoord.translate(pos);
 				add_mesh(worldcoord, box, wall, false);
 				rigid_bodies.back()->setFriction(0);
@@ -159,7 +160,7 @@ namespace octet {
 
 	}
 
-	void Camera(){
+	/*void Camera(){
 
 		int vx = 0,vy = 0;
 		int x, y;
@@ -179,7 +180,7 @@ namespace octet {
 			modeltoworld.rotateX(-40);
 
 		app_scene->get_camera_instance(0)->get_node()->access_nodeToParent() = modeltoworld;
-	}
+	}*/
   
     void app_init() {
 
@@ -189,8 +190,9 @@ namespace octet {
 	  wall = new material(vec4(1, 0, 0, 1));
 	  floor = new material(vec4(0, 1, 0, 1));
 	  target = new material(vec4(1, 1, 0, 1));
+	  newscene();
 	  loadlevel();
-	  Camera();
+	  //Camera();
 	  
 	  
 	
