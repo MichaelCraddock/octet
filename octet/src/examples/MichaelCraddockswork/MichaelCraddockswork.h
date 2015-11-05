@@ -24,9 +24,11 @@ namespace octet {
 	material *wall, *floor ,*target;
 
 	mat4t worldcoord;
-	scene_node *cam;
-
+	bool isKeyDown;
 	string content;
+	enum {
+		BULLET = 0
+	};
   public:
    
     MichaelCraddockswork(int argc, char **argv) : app(argc, argv) {
@@ -44,7 +46,7 @@ namespace octet {
 	}
 
 	// in this section we add a mesh and a rigid body
-	void add_mesh(mat4t_in coord, mesh *shape, material *mat, bool is_dynamic){
+	void add_mesh(mat4t_in coord, mesh *shape, material *mat, bool is_dynamic = true){
 		
 		scene_node *node = new scene_node();
 		node->access_nodeToParent() = coord;
@@ -71,9 +73,39 @@ namespace octet {
 			rigid_body->setUserPointer(node);
 
 		}
-		
-		
+	}
+	void add_bullet(mat4t_in modelToWorld, vec3_in size, material *mat, int index, bool is_dynamic = true) {
 
+		btMatrix3x3 matrix(get_btMatrix3x3(modelToWorld));
+		btVector3 pos(get_btVector3(modelToWorld[3].xyz()));
+
+		btCollisionShape *shape = new btBoxShape(get_btVector3(size));
+
+		btTransform transform(matrix, pos);
+
+		btDefaultMotionState *motionState = new btDefaultMotionState(transform);
+		btScalar mass = is_dynamic ? 1.0f : 0.0f;
+		btVector3 inertiaTensor;
+
+		shape->calculateLocalInertia(mass, inertiaTensor);
+
+		btRigidBody * rigid_body = new btRigidBody(mass, motionState, shape, inertiaTensor);
+		world->addRigidBody(rigid_body);
+		rigid_bodies.push_back(rigid_body);
+		// this is where we make the bullet follow the camera so that it shoots where the camera is looking.
+		vec3 dir(0, 0, -1);
+		quat rot = app_scene->get_camera_instance(0)->get_node()->access_nodeToParent().toQuaternion();
+		dir *= rot;
+		rigid_body->applyCentralForce(get_btVector3(dir * 3000));
+		rigid_body->setUserIndex(index);
+
+
+		mesh_box *box = new mesh_box(size);
+		scene_node *node = new scene_node(modelToWorld, atom_);
+		nodes.push_back(node);
+
+		app_scene->add_child(node);
+		app_scene->add_mesh_instance(new mesh_instance(node, box, mat));
 	}
 
 	void loadlevel(){
@@ -130,9 +162,9 @@ namespace octet {
 				pos += vec3(1, 0, 0);
 				break;
 			case'X': worldcoord.translate(pos);
-				add_mesh(worldcoord, box, target, false);
-				rigid_bodies.back()->setFriction(0);
-				rigid_bodies.back()->setRestitution(0);
+				add_mesh(worldcoord, box, target, true);
+				rigid_bodies.back()->setFriction(1);
+				rigid_bodies.back()->setRestitution(1);
 				worldcoord.loadIdentity();
 				x += 1;
 				pos += vec3(1, 0, 0);
@@ -172,6 +204,22 @@ namespace octet {
 			modeltoworld.rotateX(-40);
 
 		app_scene->get_camera_instance(0)->get_node()->access_nodeToParent() = modeltoworld;
+		material *red = new material(vec4(1, 0, 0, 1));
+		if (is_key_down(key_lmb)){
+			// This checks if the mouse button has been pressed down
+			if (isKeyDown == true){
+			}
+			//This creates the box within the first frame and registers that the key is down
+			else{
+				
+				modeltoworld.translate(0, 0, -1);
+				add_bullet(modeltoworld, vec3(0.1f), red, BULLET);
+				isKeyDown = true;
+			}
+		}
+		else {
+			isKeyDown = false;
+		}
 	}
   
     void app_init() {
@@ -183,11 +231,8 @@ namespace octet {
 	  wall = new material(vec4(1, 0, 0, 1));
 	  floor = new material(vec4(0, 1, 0, 1));
 	  target = new material(vec4(1, 1, 0, 1));
+	  isKeyDown = false;
 	  loadlevel();
-	  
-	  
-	  
-	
     }
 
   
@@ -195,7 +240,6 @@ namespace octet {
       int vx = 0, vy = 0;
       get_viewport_size(vx, vy);
       app_scene->begin_render(vx, vy);
-
       app_scene->update(1.0f/30);
 	  Camera();
 
