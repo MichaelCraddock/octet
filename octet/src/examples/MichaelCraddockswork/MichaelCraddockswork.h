@@ -64,7 +64,7 @@ namespace octet {
 
 			btTransform transform(matrix, pos);
 			btDefaultMotionState *motionstate = new btDefaultMotionState(transform);
-			btScalar mass = is_dynamic ? 0.5f : 0.5f;
+			btScalar mass = is_dynamic ? 0.5f : 0.0f;
 			btVector3 inertiaTensor;
 
 			collisionshape->calculateLocalInertia(mass, inertiaTensor);
@@ -166,8 +166,8 @@ namespace octet {
 				break;
 			case'X': worldcoord.translate(pos);
 				add_mesh(worldcoord, box, target, true);
-				rigid_bodies.back()->setFriction(1);
-				rigid_bodies.back()->setRestitution(1);
+				rigid_bodies.back()->setFriction(0);
+				rigid_bodies.back()->setRestitution(0);
 				worldcoord.loadIdentity();
 				x += 1;
 				pos += vec3(1, 0, 0);
@@ -197,7 +197,7 @@ namespace octet {
 		mat4t modeltoworld;
 
 		modeltoworld.loadIdentity();
-		modeltoworld.translate(24, -24, 50);
+		modeltoworld.translate(25, -24, 50);
 		modeltoworld.rotateY((float)-x*2.0f);
 		if (vy / 2 - y < 40 && vy / 2 - y > -40)
 			modeltoworld.rotateX(vy / 2 - y);
