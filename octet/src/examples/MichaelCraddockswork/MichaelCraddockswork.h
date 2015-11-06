@@ -21,13 +21,13 @@ namespace octet {
 	dynarray<btRigidBody*> rigid_bodies;
 	dynarray<scene_node*> nodes;
 	mesh_box *box;
-	material *wall, *floor ,*target;
+	material *wall, *floor ,*target, *bullet;
 
 	mat4t worldcoord;
 	bool isKeyDown;
 	string content;
 	enum {
-		BULLET = 0
+		BULLET = 0, FLOOR = 1, TARGET = 2
 	};
 
   public:
@@ -64,7 +64,7 @@ namespace octet {
 
 			btTransform transform(matrix, pos);
 			btDefaultMotionState *motionstate = new btDefaultMotionState(transform);
-			btScalar mass = is_dynamic ? 0.5f : 0.0f;
+			btScalar mass = is_dynamic ? 1.0f : 0.0f;
 			btVector3 inertiaTensor;
 
 			collisionshape->calculateLocalInertia(mass, inertiaTensor);
@@ -197,7 +197,7 @@ namespace octet {
 		mat4t modeltoworld;
 
 		modeltoworld.loadIdentity();
-		modeltoworld.translate(25, -24, 50);
+		modeltoworld.translate(15, -12, 30);
 		modeltoworld.rotateY((float)-x*2.0f);
 		if (vy / 2 - y < 40 && vy / 2 - y > -40)
 			modeltoworld.rotateX(vy / 2 - y);
@@ -207,7 +207,6 @@ namespace octet {
 			modeltoworld.rotateX(-40);
 
 		app_scene->get_camera_instance(0)->get_node()->access_nodeToParent() = modeltoworld;
-		material *red = new material(vec4(1, 0, 0, 1));
 		if (is_key_down(key_lmb)){
 			// This checks if the mouse button has been pressed down
 			if (isKeyDown == true){
@@ -216,7 +215,7 @@ namespace octet {
 			else{
 				
 				modeltoworld.translate(0, 0, -1);
-				add_bullet(modeltoworld, vec3(0.1f), red, BULLET);
+				add_bullet(modeltoworld, vec3(0.1f), bullet, BULLET);
 				isKeyDown = true;
 			}
 		}
@@ -234,6 +233,7 @@ namespace octet {
 	  wall = new material(vec4(1, 0, 0, 1));
 	  floor = new material(vec4(0, 1, 0, 1));
 	  target = new material(vec4(1, 1, 0, 1));
+	  bullet = new material(vec4(1, 0, 0, 1));
 	  isKeyDown = false;
 	  loadlevel();
     }
