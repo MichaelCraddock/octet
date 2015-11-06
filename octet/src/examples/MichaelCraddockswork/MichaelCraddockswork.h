@@ -21,14 +21,20 @@ namespace octet {
 	dynarray<btRigidBody*> rigid_bodies;
 	dynarray<scene_node*> nodes;
 	mesh_box *box;
-	material *wall, *floor ,*target, *bullet;
+	material *wall, *floor ,*target, *bullet, *faketar, *block;
 
 	mat4t worldcoord;
 	bool isKeyDown;
 	string content;
 	enum {
-		BULLET = 0, FLOOR = 1, TARGET = 2
+		BULLET = 0, FLOOR = 1, TARGET = 2, FAKETARGET = 3, num_sound_sources = 8
 	};
+	ALuint Hit;
+	ALuint Shot;
+	ALuint Faketarget;
+	unsigned cur_source;
+	ALuint sources[num_sound_sources];
+	ALuint get_sound_source() { return sources[cur_source++ % num_sound_sources]; }
 
   public:
    
@@ -98,7 +104,7 @@ namespace octet {
 		vec3 dir(0, 0, -1);
 		quat rot = app_scene->get_camera_instance(0)->get_node()->access_nodeToParent().toQuaternion();
 		dir = dir * (mat4t)rot;
-		rigid_body->applyCentralForce(get_btVector3(dir * 3000));
+		rigid_body->applyCentralForce(get_btVector3(dir * 2500));
 		rigid_body->setUserIndex(index);
 
 
@@ -166,13 +172,30 @@ namespace octet {
 				break;
 			case'X': worldcoord.translate(pos);
 				add_mesh(worldcoord, box, target, true);
+				rigid_bodies.back()->setUserIndex(TARGET);
 				rigid_bodies.back()->setFriction(0);
 				rigid_bodies.back()->setRestitution(0);
 				worldcoord.loadIdentity();
 				x += 1;
 				pos += vec3(1, 0, 0);
 				break;
-			//case'-':
+			case'F': worldcoord.translate(pos);
+				add_mesh(worldcoord, box, block, false);
+				rigid_bodies.back()->setFriction(0);
+				rigid_bodies.back()->setRestitution(0);
+				worldcoord.loadIdentity();
+				x += 1;
+				pos += vec3(1, 0, 0);
+				break;
+			case'N': worldcoord.translate(pos);
+				add_mesh(worldcoord, box, faketar ,false);
+				rigid_bodies.back()->setUserIndex(FAKETARGET);
+				rigid_bodies.back()->setFriction(0);
+				rigid_bodies.back()->setRestitution(0);
+				worldcoord.loadIdentity();
+				x += 1;
+				pos += vec3(1, 0, 0);
+				break;
 			case'|': worldcoord.translate(pos);
 				add_mesh(worldcoord, box, wall, false);
 				rigid_bodies.back()->setFriction(0);
@@ -213,7 +236,9 @@ namespace octet {
 			}
 			//This creates the box within the first frame and registers that the key is down
 			else{
-				
+				ALuint source = get_sound_source();
+				alSourcei(source, AL_BUFFER, Shot);
+				alSourcePlay(source);
 				modeltoworld.translate(0, 0, -1);
 				add_bullet(modeltoworld, vec3(0.1f), bullet, BULLET);
 				isKeyDown = true;
@@ -234,6 +259,8 @@ namespace octet {
 	  floor = new material(vec4(0, 1, 0, 1));
 	  target = new material(vec4(1, 1, 0, 1));
 	  bullet = new material(vec4(1, 0, 0, 1));
+	  faketar = new material(vec4(1, 0, 0, 1));
+	  block = new material(vec4(1, 0, 1, 1));
 	  isKeyDown = false;
 	  loadlevel();
     }
@@ -243,6 +270,67 @@ namespace octet {
       int vx = 0, vy = 0;
       get_viewport_size(vx, vy);
       app_scene->begin_render(vx, vy);
+	  int numManifolds = world->getDispatcher()->getNumManifolds();
+	  //if (true) printf("------new physics step--------\n");
+	  for (int i = 0; i < numManifolds; i++){
+		  btPersistentManifold* contactManifold = world->getDispatcher()->getManifoldByIndexInternal(i);
+		  const btCollisionObject* rgd1 = contactManifold->getBody0();
+		  const btCollisionObject* rgd2 = contactManifold->getBody1();
+		  int objA = contactManifold->getBody0()->getUserIndex();
+		  int objB = contactManifold->getBody1()->getUserIndex();
+		  //here we check the collisions and print them to make sure they work
+		  if (objA == TARGET && objB == BULLET){
+			  printf("A bullet has hit a target\n");
+		  }
+		  if (objA == FAKETARGET && objB == BULLET){
+			  printf("A bullet has hit a fake target\n");
+		  }
+		  //if the bullet collides with the target play sound
+		  if (objA == TARGET && objB == BULLET){
+
+			  for (int i = 0; i < rigid_bodies.size(); ++i){
+				  if (rigid_bodies[i] == rgd1)
+				  {
+					  ALuint source = get_sound_source();
+					  alSourcei(source, AL_BUFFER, Hit);
+					  alSourcePlay(source);				
+				  }
+			  }
+		  }
+		  if (objA == BULLET && objB == TARGET){
+
+			  for (int i = 0; i < rigid_bodies.size(); ++i){
+				  if (rigid_bodies[i] == rgd2){
+					  ALuint source = get_sound_source();
+					  alSourcei(source, AL_BUFFER, Hit);
+					  alSourcePlay(source);
+				  }
+			  }
+		  }
+		  if (objA == FAKETARGET && objB == BULLET){
+
+			  for (int i = 0; i < rigid_bodies.size(); ++i){
+				  if (rigid_bodies[i] == rgd1)
+				  {
+					  ALuint source = get_sound_source();
+					  alSourcei(source, AL_BUFFER, Faketarget);
+					  alSourcePlay(source);
+				  }
+			  }
+		  }
+		  if (objA == BULLET && objB == FAKETARGET){
+
+			  for (int i = 0; i < rigid_bodies.size(); ++i){
+				  if (rigid_bodies[i] == rgd2){
+					  ALuint source = get_sound_source();
+					  alSourcei(source, AL_BUFFER, Faketarget);
+					  alSourcePlay(source);
+				  }
+			  }
+		  }
+	  }
+
+
 	  world->stepSimulation(1.0f / 30);
 	  for (unsigned i = 0; i != rigid_bodies.size(); ++i) {
 		  btRigidBody *rigid_body = rigid_bodies[i];
@@ -253,6 +341,12 @@ namespace octet {
 		  modelToWorld[3] = vec4(pos[0], pos[1], pos[2], 1);
 		  nodes[i]->access_nodeToParent() = modelToWorld;
 	  }
+	  Hit = resource_dict::get_sound_handle(AL_FORMAT_MONO16, "assets/Michaels work sounds/Hit.wav");
+	  Shot = resource_dict::get_sound_handle(AL_FORMAT_MONO16, "assets/Michaels work sounds/Shot.wav");
+	  Faketarget = resource_dict::get_sound_handle(AL_FORMAT_MONO16, "assets/Michaels work sounds/Faketarget.wav");
+	  cur_source = 0;
+	  alGenSources(num_sound_sources, sources);
+
       app_scene->update(1.0f/30);
 	  Camera();
 
