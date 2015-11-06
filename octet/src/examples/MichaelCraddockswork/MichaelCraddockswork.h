@@ -29,6 +29,7 @@ namespace octet {
 	enum {
 		BULLET = 0
 	};
+
   public:
    
     MichaelCraddockswork(int argc, char **argv) : app(argc, argv) {
@@ -52,6 +53,7 @@ namespace octet {
 		node->access_nodeToParent() = coord;
 		app_scene->add_child(node);
 		app_scene->add_mesh_instance(new mesh_instance(node, shape, mat));
+		nodes.push_back(node);
 
 		btMatrix3x3 matrix(get_btMatrix3x3(coord));
 		btVector3 pos(get_btVector3(coord[3].xyz()));
@@ -95,7 +97,7 @@ namespace octet {
 		// this is where we make the bullet follow the camera so that it shoots where the camera is looking.
 		vec3 dir(0, 0, -1);
 		quat rot = app_scene->get_camera_instance(0)->get_node()->access_nodeToParent().toQuaternion();
-		dir *= rot;
+		dir = dir * (mat4t)rot;
 		rigid_body->applyCentralForce(get_btVector3(dir * 3000));
 		rigid_body->setUserIndex(index);
 
@@ -107,6 +109,7 @@ namespace octet {
 		app_scene->add_child(node);
 		app_scene->add_mesh_instance(new mesh_instance(node, box, mat));
 	}
+
 
 	void loadlevel(){
 		
@@ -240,6 +243,16 @@ namespace octet {
       int vx = 0, vy = 0;
       get_viewport_size(vx, vy);
       app_scene->begin_render(vx, vy);
+	  world->stepSimulation(1.0f / 30);
+	  for (unsigned i = 0; i != rigid_bodies.size(); ++i) {
+		  btRigidBody *rigid_body = rigid_bodies[i];
+		  btQuaternion btq = rigid_body->getOrientation();
+		  btVector3 pos = rigid_body->getCenterOfMassPosition();
+		  quat q(btq[0], btq[1], btq[2], btq[3]);
+		  mat4t modelToWorld = q;
+		  modelToWorld[3] = vec4(pos[0], pos[1], pos[2], 1);
+		  nodes[i]->access_nodeToParent() = modelToWorld;
+	  }
       app_scene->update(1.0f/30);
 	  Camera();
 
