@@ -12,7 +12,8 @@ In this document we’ll go over what work has been done for this piece of cours
 To start off the project in its core shows off a level being read in and loaded into the scene via a text file, and collision detection that detects when two objects collide and then reacts accordingly. The layout of the project is that of a target range which allows the player to move the camera around and shoot at objects that have been loaded in via a text file. 
 To start things off we’ll go over the loading of the text file in. To start this off we need to firstly need to read in the file.  To do this we reference the textfile and then open the file and take the content and store it. This will then be used when building the level.
  
-void loadlevel(){
+	void loadlevel(){
+		
 		std::fstream levelfile;
 		std::stringstream filename;
 		filename << "testlevel" << ".txt";
@@ -35,6 +36,8 @@ void loadlevel(){
 			content = file.str().c_str();
 			printf("%s \n", content.c_str());
 			Buildlevel();
+		}
+
 		}
 As you can see we print the contents to make sure that it has properly loaded, this is to show us that the level has indeed been read in correctly and displays as intended. Prior to building the level this was used to confirm the file could be read in and loaded to read properly.
 The second thing we do is then build in the level; we do this by going through an iteration stage where we take the symbols used in the text file and give them a definition and attach meshes to that character. So for example in this code we use a few different characters that all build into different things
