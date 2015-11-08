@@ -1,8 +1,13 @@
 # octet
 
-HONROABLE MENTIONS
+# HONROABLE MENTIONS
 Baggio Pereira: He helped me quite a bit early on, helping me with the building of the level. He also helped me figure out some of the physics issues I was having midway through and honestly just was incredibly helpful throughout this project.
-Michael Craddock Tools and middleware coursework 1
+
+# Video link
+Here is a link to a video showcasing the project. https://www.youtube.com/watch?v=5bMVQZKzZkM&feature=youtu.be
+
+# Michael Craddock Tools and middleware coursework 1
+
 In this document we’ll go over what work has been done for this piece of coursework, showing off the code used and what it is being used for and how. Difficulties encountered in the project and things that could have either been changed or done differently.
 To start off the project in its core shows off a level being read in and loaded into the scene via a text file, and collision detection that detects when two objects collide and then reacts accordingly. The layout of the project is that of a target range which allows the player to move the camera around and shoot at objects that have been loaded in via a text file. 
 To start things off we’ll go over the loading of the text file in. To start this off we need to firstly need to read in the file.  To do this we reference the textfile and then open the file and take the content and store it. This will then be used when building the level.
